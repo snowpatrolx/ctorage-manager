@@ -31,11 +31,12 @@ export default defineConfig({
         background_color: '#fafaf9',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: '/ctorage-manager/',
+        scope: '/ctorage-manager/',
         lang: 'zh-CN',
         icons: [
           {
-            src: '/favicon.svg',
+            src: '/ctorage-manager/favicon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any maskable',
