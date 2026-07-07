@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收纳管家 - 下载中心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #F5F0E8 0%, #E8DED5 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(124, 152, 133, 0.2);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: #7C9885;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 15px;
+        }
+        .logo-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: white;
+        }
+        h1 {
+            color: #7C9885;
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #8B7E74;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .download-card {
+            background: #F5F0E8;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .download-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .file-info {
+            flex: 1;
+        }
+        .file-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .file-desc {
+            font-size: 13px;
+            color: #8B7E74;
+        }
+        .file-size {
+            font-size: 12px;
+            color: #7C9885;
+            margin-top: 5px;
+        }
+        .download-btn {
+            background: #7C9885;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .download-btn:hover {
+            background: #5A7A63;
+        }
+        .download-btn.secondary {
+            background: #E8956D;
+        }
+        .download-btn.secondary:hover {
+            background: #D17A4D;
+        }
+        .tip {
+            background: #FFF8F0;
+            border-left: 4px solid #E8956D;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+        .tip-title {
+            font-weight: 600;
+            color: #E8956D;
+            margin-bottom: 8px;
+        }
+        .tip-content {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+        }
+        .step {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .step::before {
+            content: counter(step);
+            counter-increment: step;
+            position: absolute;
+            left: 0;
+            color: #7C9885;
+            font-weight: bold;
+        }
+        .steps {
+            counter-reset: step;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #8B7E74;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/></svg>
+            </div>
+            <h1>收纳管家</h1>
+            <p class="subtitle">个人物品收纳管理应用</p>
+        </div>
+
+        <div class="download-card">
+            <div class="file-info">
+                <div class="file-name">📦 dist.zip</div>
+                <div class="file-desc">部署包 - 可直接上传到 Netlify</div>
+                <div class="file-size">约 1MB</div>
+            </div>
+            <a href="dist.zip" class="download-btn" download>下载</a>
+        </div>
+
+        <div class="download-card">
+            <div class="file-info">
+                <div class="file-name">📁 storage-manager-full.zip</div>
+                <div class="file-desc">完整源码 - 含所有项目文件</div>
+                <div class="file-size">约 3.5MB</div>
+            </div>
+            <a href="storage-manager-full.zip" class="download-btn secondary" download>下载</a>
+        </div>
+
+        <div class="tip">
+            <div class="tip-title">💡 部署到手机教程</div>
+            <div class="tip-content">
+                <div class="steps">
+                    <div class="step">下载 dist.zip 并解压</div>
+                    <div class="step">打开 https://app.netlify.com/drop</div>
+                    <div class="step">把 dist 文件夹拖进去</div>
+                    <div class="step">得到网址，手机浏览器打开</div>
+                    <div class="step">添加到主屏幕，像 App 一样使用</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            收纳管家 v1.0 | PWA 应用
+        </div>
+    </div>
+</body>
+</html>

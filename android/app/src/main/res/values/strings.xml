@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">收纳管家</string>
+    <string name="title_activity_main">收纳管家</string>
+    <string name="package_name">com.storage.manager</string>
+    <string name="custom_url_scheme">com.storage.manager</string>
+</resources>
