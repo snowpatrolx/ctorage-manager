@@ -35,7 +35,7 @@ function AppContent() {
 
 export default function App() {
   return (
-    <Router>
+    <Router basename="/ctorage-manager">
       <AppContent />
     </Router>
   );
