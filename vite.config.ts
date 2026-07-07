@@ -12,9 +12,9 @@ export default defineConfig({
   plugins: [
     react({
       babel: {
-        plugins: [
+        plugins: process.env.NODE_ENV === 'development' ? [
           'react-dev-locator',
-        ],
+        ] : [],
       },
     }),
     VitePWA({
