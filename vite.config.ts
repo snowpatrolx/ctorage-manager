@@ -9,6 +9,16 @@ export default defineConfig({
   base: '/ctorage-manager/',
   build: {
     sourcemap: 'hidden',
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'tensorflow': ['@tensorflow/tfjs', '@tensorflow-models/mobilenet'],
+          'pinyin': ['pinyin-pro'],
+          'vendor': ['react', 'react-dom', 'react-router-dom', 'zustand', 'dexie', 'dexie-react-hooks', 'xlsx'],
+        },
+      },
+    },
   },
   plugins: [
     react({

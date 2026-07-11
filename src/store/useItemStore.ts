@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { Item } from '@/types';
 import { db } from '@/db';
+import { fuzzySearchItems } from '@/utils/fuzzySearch';
+import { useLocationStore } from '@/store/useLocationStore';
+import { useCategoryStore } from '@/store/useCategoryStore';
 
 interface ItemState {
   items: Item[];
@@ -89,13 +92,11 @@ export const useItemStore = create<ItemState>((set, get) => ({
     const { items, searchQuery, filterCategoryIds, filterLocationIds } = get();
     let filtered = items;
 
+    // 使用模糊搜索（支持拼音、首字母、模糊匹配）
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        item =>
-          item.name.toLowerCase().includes(query) ||
-          item.notes.toLowerCase().includes(query)
-      );
+      const { locations } = useLocationStore.getState();
+      const { categories } = useCategoryStore.getState();
+      filtered = fuzzySearchItems(filtered, searchQuery, locations, categories);
     }
 
     if (filterCategoryIds.length > 0) {

@@ -6,7 +6,7 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-export function SearchBar({ value, onChange, placeholder = '搜索物品...' }: SearchBarProps) {
+export function SearchBar({ value, onChange, placeholder = '搜索物品/拼音/首字母...' }: SearchBarProps) {
   return (
     <div className="relative">
       <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />

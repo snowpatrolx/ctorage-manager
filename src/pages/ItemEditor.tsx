@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, X, Save, Mic, MicOff } from 'lucide-react';
+import { ArrowLeft, Camera, X, Save, Mic, MicOff, Scan, Loader2 } from 'lucide-react';
 import { useItemStore } from '@/store/useItemStore';
 import { useCategoryStore } from '@/store/useCategoryStore';
 import { useLocationStore } from '@/store/useLocationStore';
@@ -9,6 +9,7 @@ import { LocationPicker } from '@/components/LocationPicker';
 import { Item } from '@/types';
 import { isSpeechRecognitionSupported, startSpeechRecognition } from '@/utils/speech';
 import { parseItemText, matchExistingLocation } from '@/utils/textParser';
+import { recognizeImage, createImageFromDataURL, RecognitionResult } from '@/utils/imageRecognition';
 
 export default function ItemEditor() {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +33,11 @@ export default function ItemEditor() {
   const [interimText, setInterimText] = useState('');
   const [speechError, setSpeechError] = useState('');
   const stopRef = useRef<(() => void) | null>(null);
+
+  // 图像识别相关状态
+  const [recognizing, setRecognizing] = useState(false);
+  const [recognitionResults, setRecognitionResults] = useState<RecognitionResult[]>([]);
+  const [recognitionError, setRecognitionError] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -63,9 +69,35 @@ export default function ItemEditor() {
       const reader = new FileReader();
       reader.onload = (e) => {
         setImage(e.target?.result as string);
+        setRecognitionResults([]);
+        setRecognitionError('');
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // 图像识别处理
+  const handleRecognizeImage = async () => {
+    if (!image) return;
+
+    setRecognizing(true);
+    setRecognitionError('');
+    setRecognitionResults([]);
+
+    try {
+      const imgElement = await createImageFromDataURL(image);
+      const results = await recognizeImage(imgElement);
+      setRecognitionResults(results);
+    } catch (err) {
+      setRecognitionError('识别失败：' + (err as Error).message);
+    } finally {
+      setRecognizing(false);
+    }
+  };
+
+  // 点击识别结果，自动填入名称
+  const handleSelectRecognitionResult = (result: RecognitionResult) => {
+    setName(result.labelZh);
   };
 
   // 语音录入处理
@@ -303,6 +335,66 @@ export default function ItemEditor() {
               <label htmlFor="image-upload" className="absolute inset-0 cursor-pointer" />
             )}
           </div>
+
+          {/* AI 图像识别区域 */}
+          {image && (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={handleRecognizeImage}
+                disabled={recognizing}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border-2 border-stone-200 bg-white text-stone-600 hover:border-green-300 hover:text-green-600 transition-all disabled:opacity-60"
+              >
+                {recognizing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    AI 识别中...
+                  </>
+                ) : (
+                  <>
+                    <Scan className="w-4 h-4" />
+                    AI 识别物品
+                  </>
+                )}
+              </button>
+
+              {/* 识别结果 */}
+              {recognitionResults.length > 0 && (
+                <div className="mt-2 bg-white rounded-xl border border-stone-200 overflow-hidden">
+                  <div className="px-4 py-2 bg-stone-50 border-b border-stone-100">
+                    <p className="text-xs font-medium text-stone-500">AI 识别结果（点击选用）</p>
+                  </div>
+                  <div className="px-2 py-2">
+                    {recognitionResults.map((result, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectRecognitionResult(result)}
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-stone-50 transition-colors text-left"
+                      >
+                        <span className="text-sm font-medium text-stone-800">
+                          {result.labelZh}
+                          {result.label !== result.labelZh && (
+                            <span className="text-xs text-stone-400 ml-2">{result.label}</span>
+                          )}
+                        </span>
+                        <span className="text-xs text-stone-400">
+                          {Math.round(result.probability * 100)}%
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 识别错误 */}
+              {recognitionError && (
+                <div className="mt-2 px-4 py-2 bg-red-50 rounded-lg text-sm text-red-600">
+                  {recognitionError}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-4">
