@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, X, Save } from 'lucide-react';
+import { ArrowLeft, Camera, X, Save, Mic, MicOff } from 'lucide-react';
 import { useItemStore } from '@/store/useItemStore';
 import { useCategoryStore } from '@/store/useCategoryStore';
 import { useLocationStore } from '@/store/useLocationStore';
 import { CategoryPicker } from '@/components/CategoryPicker';
 import { LocationPicker } from '@/components/LocationPicker';
 import { Item } from '@/types';
+import { isSpeechRecognitionSupported, startSpeechRecognition } from '@/utils/speech';
+import { parseItemText, matchExistingLocation } from '@/utils/textParser';
 
 export default function ItemEditor() {
   const { id } = useParams<{ id: string }>();
@@ -15,7 +17,7 @@ export default function ItemEditor() {
 
   const { addItem, updateItem, getItemById } = useItemStore();
   const { fetchCategories } = useCategoryStore();
-  const { fetchLocations } = useLocationStore();
+  const { locations, fetchLocations, addLocation } = useLocationStore();
 
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -24,6 +26,12 @@ export default function ItemEditor() {
   const [locationId, setLocationId] = useState<number | undefined>();
   const [image, setImage] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
+
+  // 语音相关状态
+  const [listening, setListening] = useState(false);
+  const [interimText, setInterimText] = useState('');
+  const [speechError, setSpeechError] = useState('');
+  const stopRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -40,6 +48,13 @@ export default function ItemEditor() {
         }
       });
     }
+
+    return () => {
+      // 组件卸载时停止语音识别
+      if (stopRef.current) {
+        stopRef.current();
+      }
+    };
   }, [id, isEdit]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,6 +65,86 @@ export default function ItemEditor() {
         setImage(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // 语音录入处理
+  const handleVoiceInput = () => {
+    if (listening) {
+      // 停止录音
+      if (stopRef.current) {
+        stopRef.current();
+      }
+      setListening(false);
+      setInterimText('');
+      return;
+    }
+
+    setSpeechError('');
+    setInterimText('');
+    setListening(true);
+
+    const { stop } = startSpeechRecognition(
+      // 最终结果
+      (result) => {
+        setListening(false);
+        setInterimText('');
+        applyParsedText(result.text);
+      },
+      // 错误回调
+      (error) => {
+        setListening(false);
+        setInterimText('');
+        setSpeechError(error);
+      },
+      // 中间结果
+      (text) => {
+        setInterimText(text);
+      }
+    );
+
+    stopRef.current = stop;
+  };
+
+  // 解析语音文本并填充表单
+  const applyParsedText = (text: string) => {
+    const locationNames = locations.map(l => l.name);
+    const parsed = parseItemText(text, locationNames);
+
+    if (parsed.name) {
+      setName(parsed.name);
+    }
+    if (parsed.quantity > 1) {
+      setQuantity(parsed.quantity);
+    }
+
+    // 尝试匹配已有位置
+    if (parsed.location) {
+      const matchedIdx = matchExistingLocation(parsed.location, locationNames);
+      if (matchedIdx !== undefined && locations[matchedIdx]) {
+        setLocationId(locations[matchedIdx].id);
+      } else {
+        // 自动创建新位置
+        handleAutoCreateLocation(parsed.location);
+      }
+    }
+
+    // 把原始语音文本存为备注
+    if (parsed.location || parsed.quantity > 1) {
+      setNotes(prev => prev ? `${prev}\n语音: ${text}` : `语音: ${text}`);
+    }
+  };
+
+  // 自动创建新位置
+  const handleAutoCreateLocation = async (locationName: string) => {
+    try {
+      const newId = await addLocation({
+        name: locationName,
+        level: 1,
+      });
+      setLocationId(newId);
+    } catch {
+      // 创建失败不阻塞流程
     }
   };
 
@@ -86,6 +181,8 @@ export default function ItemEditor() {
     }
   };
 
+  const showVoiceButton = isSpeechRecognitionSupported();
+
   return (
     <div className="min-h-screen bg-stone-50 pb-24">
       <div className="sticky top-0 z-30 bg-stone-50/80 backdrop-blur-md border-b border-stone-100">
@@ -110,6 +207,69 @@ export default function ItemEditor() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-5">
+        {/* 语音录入区域 */}
+        {showVoiceButton && (
+          <div className="mb-4">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-stone-700">语音录入</label>
+                  <span className="text-xs text-stone-400">说出物品和位置即可自动填写</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleVoiceInput}
+                    className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all ${
+                      listening
+                        ? 'bg-red-50 text-red-600 border-2 border-red-200 animate-pulse'
+                        : 'bg-stone-50 text-stone-700 border-2 border-stone-200 hover:border-green-300 hover:text-green-600'
+                    }`}
+                  >
+                    {listening ? (
+                      <>
+                        <MicOff className="w-4 h-4" />
+                        停止录音
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-4 h-4" />
+                        开始说话
+                      </>
+                    )}
+                  </button>
+                  {listening && (
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <span className="text-sm text-stone-500">正在聆听...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* 实时识别文本 */}
+                {interimText && (
+                  <div className="mt-3 px-4 py-2 bg-green-50 rounded-lg text-sm text-green-700">
+                    识别中：{interimText}
+                  </div>
+                )}
+                {/* 错误提示 */}
+                {speechError && (
+                  <div className="mt-3 px-4 py-2 bg-red-50 rounded-lg text-sm text-red-600">
+                    {speechError}
+                  </div>
+                )}
+                {/* 语音使用提示 */}
+                {!listening && !interimText && !speechError && (
+                  <div className="mt-3 text-xs text-stone-400 leading-relaxed">
+                    示例："电池在诺西贝箱里" → 自动填入名称和位置
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mb-5">
           <label className="block text-sm font-medium text-stone-700 mb-2">物品图片</label>
           <div className="relative">

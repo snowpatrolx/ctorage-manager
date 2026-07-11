@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, PackageOpen } from 'lucide-react';
+import { Plus, PackageOpen, Mic } from 'lucide-react';
 import { ItemCard } from '@/components/ItemCard';
 import { SearchBar } from '@/components/SearchBar';
 import { FilterTags } from '@/components/FilterTags';
+import { QuickVoiceInput } from '@/components/QuickVoiceInput';
 import { useItemStore } from '@/store/useItemStore';
 import { useCategoryStore } from '@/store/useCategoryStore';
 import { useLocationStore } from '@/store/useLocationStore';
+import { isSpeechRecognitionSupported } from '@/utils/speech';
 
 export default function ItemList() {
-  const { items, loading, searchQuery, setSearchQuery, getFilteredItems } = useItemStore();
+  const { items, loading, searchQuery, setSearchQuery, getFilteredItems, fetchItems } = useItemStore();
   const { fetchCategories } = useCategoryStore();
   const { fetchLocations } = useLocationStore();
-  const { fetchItems } = useItemStore();
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showVoiceInput, setShowVoiceInput] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -22,6 +24,7 @@ export default function ItemList() {
   }, []);
 
   const filteredItems = getFilteredItems();
+  const showVoiceButton = isSpeechRecognitionSupported();
 
   return (
     <div className="min-h-screen bg-stone-50 pb-20">
@@ -69,13 +72,31 @@ export default function ItemList() {
         )}
       </div>
 
-      <Link
-        to="/item/new"
-        className="fixed right-6 bottom-24 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-transform z-30"
-        style={{ backgroundColor: '#E8956D' }}
-      >
-        <Plus className="w-7 h-7" />
-      </Link>
+      {/* 右下角按钮组 */}
+      <div className="fixed right-6 bottom-24 flex flex-col gap-3 z-30">
+        {showVoiceButton && (
+          <button
+            onClick={() => setShowVoiceInput(true)}
+            className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-transform"
+            style={{ backgroundColor: '#7C9885' }}
+          >
+            <Mic className="w-5 h-5" />
+          </button>
+        )}
+        <Link
+          to="/item/new"
+          className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-transform"
+          style={{ backgroundColor: '#E8956D' }}
+        >
+          <Plus className="w-7 h-7" />
+        </Link>
+      </div>
+
+      {/* 快速语音录入弹窗 */}
+      <QuickVoiceInput
+        open={showVoiceInput}
+        onClose={() => setShowVoiceInput(false)}
+      />
     </div>
   );
 }
